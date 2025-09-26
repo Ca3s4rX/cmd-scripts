@@ -1,17 +1,24 @@
 @echo off
+echo  ============================================================
+echo | Converting all .html files to .php and updating references |
+echo  ============================================================
+echo.
 
-REM ==================================================
-REM This script converts all .html files in the project
-REM 1. Renames .html files to .php
-REM 2. Replaces .html references inside files with .php
-REM ==================================================
+REM Step 1: Rename .html files to .php
+for /r %%f in (*.html) do (
+    echo [RENAMING] %%~nxf  ^>  %%~nf.php
+    ren "%%f" "%%~nf.php"
+)
 
-REM Step 1: Rename all .html files to .php (recursively)
-for /r %%f in (*.html) do ren "%%f" "%%~nf.php"
+echo.
+REM Step 2: Replace ".html" with ".php" inside .php files
+for /r %%f in (*.php) do (
+    echo [UPDATING] %%~nxf
+    powershell -Command "(Get-Content '%%f') -replace '\.html', '.php' | Set-Content '%%f'"
+)
 
-REM Step 2: Replace ".html" with ".php" inside all .php files (recursively)
-for /r %%f in (*.php) do powershell -Command ^
-    "(Get-Content '%%f') -replace '\.html', '.php' | Set-Content '%%f'"
-
-echo Done! All .html files converted to .php and references updated.
+echo.
+echo  ===================================================
+echo | Conversion complete! All .html files are now .php |
+echo  ===================================================
 pause
