@@ -1,24 +1,57 @@
 @echo off
-echo  ============================================================
-echo | Converting all .html files to .php and updating references |
-echo  ============================================================
+setlocal EnableDelayedExpansion
+
+REM === Configuration ===
+REM Set DRYRUN=1 to preview actions without making changes
+set "DRYRUN=0"
+
+echo ============================================================
+echo Converting all .html files to .php and updating references
+echo ============================================================
 echo.
 
-REM Step 1: Rename .html files to .php
+set "renamed=0"
+set "updated=0"
+
+REM ---------- Step 1: Rename .html -> .php (recursively) ----------
 for /r %%f in (*.html) do (
-    echo [RENAMING] %%~nxf  ^>  %%~nf.php
-    ren "%%f" "%%~nf.php"
+    echo [RENAMING] "%%~nxf" -> "%%~nf.php"
+    if "%DRYRUN%"=="1" (
+        REM dry-run: do not actually rename
+    ) else (
+        ren "%%f" "%%~nf.php"
+        if errorlevel 1 (
+            echo    [ERROR] Failed to rename "%%f"
+        ) else (
+            set /a renamed+=1
+        )
+    )
 )
 
 echo.
-REM Step 2: Replace ".html" with ".php" inside .php files
+REM ---------- Step 2: Replace ".html" with ".php" inside .php files ----------
 for /r %%f in (*.php) do (
-    echo [UPDATING] %%~nxf
-    powershell -Command "(Get-Content '%%f') -replace '\.html', '.php' | Set-Content '%%f'"
+    echo [UPDATING] "%%~nxf"
+    if "%DRYRUN%"=="1" (
+        REM dry-run: do not modify files
+    ) else (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+          "(Get-Content -Raw -LiteralPath '%%f') -replace '\.html','.php' | Set-Content -LiteralPath '%%f'"
+        if errorlevel 1 (
+            echo    [ERROR] Failed to update "%%f"
+        ) else (
+            set /a updated+=1
+        )
+    )
 )
 
 echo.
-echo  ===================================================
-echo | Conversion complete! All .html files are now .php |
-echo  ===================================================
+echo ============================================================
+echo Renamed files : !renamed!
+echo Updated files : !updated!
+echo ============================================================
+if "%DRYRUN%"=="1" (
+    echo NOTE: DRY RUN mode - no changes were written. Set DRYRUN=0 to apply changes.
+)
 pause
+endlocal
